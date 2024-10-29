@@ -1,0 +1,640 @@
+openapi: 3.0.3
+info:
+  title: Game Score Manager API
+  version: 1.4.12
+  description: The Score Management System project is a fullstack web application that allows to manage and display the scores of the players of an online video game. Players will be able to register on the platform, log in, and their scores will be automatically recorded when they play. The highest scores will be displayed in a global ranking. Administrators will be able to manage the content of the scores and users from an administration panel.
+  contact:
+    email: tredy-94@outlook.com
+    name: Fredy Tellez
+    url: https://github.com/Fredytellez
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+servers:
+  - url: 'http://localhost:3000/api/v1'
+tags:
+  - name: users
+    description: Operations about users
+  - name: scores
+    description: Operations about scores
+  - name: admin
+    description: Manage all players, ranking and scores
+  - name: authentication/authorization
+    description: Operations about authentication and authorization
+paths:
+
+  ##### user routes
+                
+  /users/profile/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get user by id
+      description: Retrieve a user by id
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: The id that needs to be fetched
+          required: true
+          schema: 
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          description: Invalid Token
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+  
+  /users/profile/update/{userId}:
+    put:
+      tags:
+        - users
+      summary: Update user by id
+      description: Update user by id (first name, last name, email, password)
+      operationId: updateUserByEmail
+      parameters:
+        - name: userId
+          in: path
+          description: The id of the user
+          required: true
+          schema: 
+            type: string
+      requestBody:
+        description: Updated user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          description: Invalid Token
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+  /users/scores/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get scores by user ID
+      description: Retrieve all scores for a specific player
+      operationId: getScoresByUserId
+      parameters:
+        - name: userId
+          in: path
+          description: The ID of the user
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserScoreDetailResponse'
+        '404':
+          description: Scores Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+  ##### Score Routes
+  
+  /scores:
+    post:
+      tags:
+        - scores
+      summary: Create a new score
+      description: Add a new score for a player
+      operationId: createScore
+      requestBody:
+        description: New score object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreCreateRequest'
+      responses:
+        '201':
+          description: Score created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreDetailResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+                
+  /scores/{userId}:
+    get:
+      tags:
+        - scores
+      summary: Get scores by user ID
+      description: Retrieve all scores for a specific player
+      operationId: getScoresByUser
+      parameters:
+        - name: userId
+          in: path
+          description: The ID of the user
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScoreDetailResponse'
+        '404':
+          description: Scores Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+  #####  Ranking Scores
+  
+  /scores/leaderboard:
+    get:
+      tags:
+        - scores
+      summary: Get ranking of best players
+      description: Retrieve the scores of the best players for the list ranking
+      operationId: getScoresRanking
+      parameters:
+        - name: limit
+          in: query
+          description: Limit the number of returned ranking scores
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Skip the first N ranking
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ranking'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '404':
+          description: Scores Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+  #####  Admin Functions
+  
+  /admin/users:
+    get:
+      tags: 
+        - admin
+      summary: Get list and manage all players (admin only)
+      description: Get the full list of users and manage them, accessible only to administrators
+      operationId: listAndManagePlayers
+      responses:
+        '200':
+          description: Successfully recovered list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          description: Invalid Token or missing permits
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden, admins only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+  /admin/scores:
+   get:
+      tags:
+        - admin
+      summary: Get all scores (admin only)
+      description: Retrieve all scores with pagination and filters 
+      operationId: getAllScores
+      parameters:
+        - name: limit
+          in: query
+          description: Limit the number of returned scores
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Skip the first N scores
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScoreDetailResponse'
+        '403':
+          description: Forbidden, admins only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Scores Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+
+  /admin/users/{userId}:
+    patch:
+      tags:
+        - admin
+      summary: Enable or block users (admin only)
+      description: Update a user's status (enable/block), accessible only to administrators
+      operationId: enableOrBlockUser
+      parameters:
+        - name: userId
+          in: path
+          description: The ID of the user to enable or block
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Update the user's status object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserStatusUpdateRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          description: Invalid token or missing permits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Prohibited, for administrators only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: User Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+    delete:
+      tags:
+        - admin
+      summary: Delete user by Id (admin only)
+      description: Soft delete a user by Id
+      operationId: deleteUserById
+      parameters:
+        - name: userId
+          in: path
+          description: The Id of the user
+          required: true
+          schema: 
+            type: string 
+      responses:
+        '204':
+          description: No content
+        '401':
+          description: Invalid Token
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden, admins only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+                
+                
+  #### Authentication/Authorization
+  
+  /auth/register:
+    post:
+      tags: 
+        - authentication/authorization
+      summary: Create a user
+      description: This service creates a user
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreateResponse'
+        '400':
+          description: Bad request 
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '404':
+          description: Not Found
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/NotFoundError'
+  
+  /auth/login:
+    post:
+      tags:
+        - authentication/authorization
+      summary: User authenticate by email and password and token JWT
+      description: Authenticate users on the platform by email and password, and generate a token for session
+      operationId: login
+      requestBody:
+        description: Auth user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuthenticateRequest'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/UserAuthenticateResponse'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+  /auth/logout:
+    post:
+      tags:
+        - authentication/authorization
+      summary: User logout by email and token
+      description: Logout users by email and token, and destroy token for session
+      operationId: logOut
+      requestBody:
+        description: Logout user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogoutRequest'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Invalid Token
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Users Not Found
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+  
+components:
+  schemas:
+  
+    UserCreateResponse:
+      type: object
+      properties:
+        firstName: 
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          
+    UserCreateRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+          
+    UserUpdateRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+          
+    UserDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+          
+    UserAuthenticateRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          
+    UserAuthenticateResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          
+    UserLogoutRequest:
+      type: object
+      required:
+        - email
+        - token
+      properties:
+        email:
+          type: string
+        token:
+          type: string
+          
+    UserScoreDetailResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        score:
+          type: integer
+        ranking:
+          type: integer
+          
+    ScoreCreateRequest:
+      type: object
+      required:
+        - score
+        - userId
+      properties:
+        score:
+          type: integer
+        userId:
+          type: string
+          
+    ScoreDetailResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        score:
+          type: integer
+        ranking:
+          type: integer  
+          
+    Ranking:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        score:
+          type: integer
+          
+    UserStatusUpdateRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [enabled, blocked]
+          description: User status, 'enabled' or 'blocked'
+          
+    UnauthorizedError:
+      type: object
+      properties:
+        message:
+          type: string
+          
+    NotFoundError:
+      type: object
+      properties:
+        message:
+          type: string
+          
+    BadRequestError:
+      type: object
+      properties:
+        message:
+          type: string
+          
+    ForbiddenError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Access prohibited"
