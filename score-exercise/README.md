@@ -1,99 +1,96 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## Implementar CRUD
+Implementar CRUD para (game scores) de los dominios users y scores en NestJS sin utilizar una base de datos por el momento.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# Ejercicio 1: Creación y configuración del proyecto NestJS
+Objetivo: Crear en NestJS módulos, controladores y servicios para gestionar las puntuaciones.
+Pasos:
+Crea un nuevo proyecto con el comando:
+nest new gameScore
+Crea el módulo Scores para gestionar las puntuaciones:
+nest generate module modules/scores
+Crea el controlador Scores:
+nest generate controller modules/scores
+Crea el servicio Scores:
+nest generate service modules/scores
+# Ejercicio 2: Definición del dominio en memoria
+Objetivo: Crear estructura de datos en memoria con faker para almacenar las puntuaciones.
+Pasos:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+En el archivo scores.service.ts, define una interfaz Score:
+export interface Score {
+  id: string;
+  username: string;
+  game: string;
+  score: number;
+}
 
-## Description
+Añade un array en el servicio para almacenar las puntuaciones:
+private scores: Score[] = [];
+# Ejercicio 3: Implementación del CRUD en el servicio
+Objetivo: Implementar CRUD de creación, lectura especifica, lectura masiva, actualización y eliminación (CRUD) en el servicio.
+2. Pasos:
+- Implementa el método createScore para añadir una nueva puntuación:
+typescript createScore(score: ScoreDto) { this.scores.push(score); } 
+Implementa getAllScores (o el nombre que define en operationId del swagger) para obtener las puntuaciones paginadas:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+getAllScores(paginationQuery: PaginationQueryDto): Paginator {
+  return <Paginator> {
+   data,
+   total,
+   page,
+   limit,
+   totalPages,
+  }   
+}
 
-## Project setup
+Implementa getScoreById para obtener una puntuación por su id:
+ getScoreById(id: string): Score {
+   return this.scores.find(score => score.id === id);
+ }
 
-```bash
-$ npm install
-```
+Implementa updateScoreById para actualizar una puntuación:
+updateScoreById(id: string, updateData: ScoreDto) {
+  const score = this.getScoreById(id);
+  if (score) {
+    Object.assign(score, updateData);
+  }
+}
+Implementa deleteScoreById para eliminar una puntuación por id:
+deleteScoreById(id: string) {
+  this.scores = this.scores.filter(score => score.id !== id);
+}
+# Ejercicio 4: Implementación de los controladores
+Objetivo: Implementar los controladores para manejar las solicitudes HTTP para el CRUD.
+Pasos:
+En scores.controller.ts, inyecta el servicio ScoresService en el constructor.
+Define los endpoints para manejar las operaciones:
+@Post()
+createScore(@Body() score: Score) {
+  return this.scoresService.createScore(score);
+}
 
-## Compile and run the project
+@Get() // tener en cuenta la paginación
+getAllScores(@Query() paginationQuery: PaginationQueryDto) {
+  return this.scoresService.getAllScores(paginationQuery);
+}
 
-```bash
-# development
-$ npm run start
+@Get(':id')
+getScoreById(@Param('id') id: string) {
+  return this.scoresService.getScoreById(id);
+}
 
-# watch mode
-$ npm run start:dev
+@Patch(':id')
+updateScoreById(@Param('id') id: string, @Body() updateData: ScoreDto) {
+  return this.scoresService.updateScoreById(id, updateData);
+}
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+@Delete(':id')
+deleteScoreById(@Param('id') id: string) {
+  return this.scoresService.deleteScoreById(id);
+}
+# Ejercicio 5: Implementación del dominio Users con rol (usuarios y administradores)
+Objetivo: Implementar una funcionalidad que permita diferenciar entre usuarios y administradores, recuerde tomar como base los anteriores 4 puntos.
+Objetivo: Implementar los servicios de subida y descarga de archivos
+Ejercicio 6: Probar las APIs
+Objetivo: Subir el swagger de la primera revisión a postman
+Objetivo: Probar el swagger definido
